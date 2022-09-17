@@ -5,6 +5,15 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
 
+const generateRandomString = () => {
+  let result = '';
+  const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.random() * characters.length);
+  }
+  return result;
+};
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
