@@ -44,8 +44,16 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/login", (req, res) => {
+  res.redirect("/urls");
+});
+
+app.get("/logout", (req, res) => {
+  res.redirect("/urls");
+});
+
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"]};
+  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
 });
 
@@ -54,9 +62,28 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
+
+app.get("/register", (req, res) => {
+  const templateVars = { email: req.cookies["email"], password: req.cookies["password"], username: req.cookies["username"] };
+  res.render("urls_registration", templateVars);
+});
+
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
+});
+
+app.post("/register", (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+  res.cookie("email", email);
+  res.cookie("password", password);
+
+  if (!email || !password) {
+    return res.status(400).send('Please correct any errors.')
+  }
+
+  res.redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
@@ -79,7 +106,7 @@ app.post("/login", (req, res) => {
   const username = req.body.username;
   res.cookie("username", username);
   res.redirect("/urls");
-console.log('req.cookies', req.cookies);
+  // console.log('req.cookies', req.cookies);
 });
 
 app.post("/logout", (req, res) => {
