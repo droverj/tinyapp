@@ -83,8 +83,9 @@ console.log('req.cookies', req.cookies);
 });
 
 app.post("/logout", (req, res) => {
-  
-})
+  res.clearCookie("username");
+  res.redirect("/urls");
+});
 
 
 app.listen(PORT, () => {
