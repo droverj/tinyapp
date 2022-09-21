@@ -17,12 +17,10 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <a class="nav-item nav-link" href="/register">Register</a>
-        <a class="nav-item nav-link" href="/login">Login</a>
       </div>
       
-      <% if(userDatabase[user]) { %>
+      <% if (userDatabase[user]) { %>
         </div>
-        <div class="" .text-dark">
           <label for="user">Signed in as: <%= userDatabase[user].email %></label>
         </div>
         </div>
@@ -30,6 +28,19 @@
         <form class="form-inline" action="/logout" method="POST">
           <div class="form-group mb-2">
             <button type="submit" class="btn btn-success">Logout</button>
+          </div>
+        </form>
+        
+        <% } else { %>
+        </div>
+        <a class="nav-item nav-link link-dark" href="/login">Login</a>
+        </div>
+        </div>
+
+        
+        
+        <form class="form-inline" action="/logout" method="POST">
+          <div class="form-group mb-2">
           </div>
         </form>
           <% } %>
