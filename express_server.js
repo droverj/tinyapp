@@ -9,6 +9,24 @@ app.set('view engine', 'ejs');
 app.use(morgan('dev'));
 app.use(cookieParser());
 
+const users = {
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  user2RandomID: {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  },
+  addUser: function(id, email, password) {
+    users[id] = {};
+    users[id]["id"] = id;
+    users[id]["email"] = email;
+    users[id]["password"] = password;
+  }
+};
 
 const generateRandomString = () => {
   let result = '';
@@ -53,38 +71,42 @@ app.get("/logout", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  const templateVars = { urls: urlDatabase, user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_new", templateVars);
 });
 
 
 app.get("/register", (req, res) => {
-  const templateVars = { email: req.cookies["email"], password: req.cookies["password"], username: req.cookies["username"] };
+  const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_registration", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"] };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_show", templateVars);
 });
 
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  res.cookie("email", email);
-  res.cookie("password", password);
+  const id = generateRandomString();
+
+  const user_id = users[id]
+  res.cookie("user_id", id);
+  users.addUser(id, email, password);
 
   if (!email || !password) {
-    return res.status(400).send('Please correct any errors.')
+    return res.status(400).send('Please fill in the required fields.')
   }
 
   res.redirect("/urls");
 });
+
 
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
@@ -106,11 +128,10 @@ app.post("/login", (req, res) => {
   const username = req.body.username;
   res.cookie("username", username);
   res.redirect("/urls");
-  // console.log('req.cookies', req.cookies);
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  // res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
