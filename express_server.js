@@ -25,6 +25,15 @@ const users = {
     users[id]["id"] = id;
     users[id]["email"] = email;
     users[id]["password"] = password;
+  },
+  confirmNewUser: function(verifyEmail) {
+    const keys = Object.keys(users);
+    for (const item in users) {
+      if (users[item].email === verifyEmail) {
+        return true;
+      }
+    }
+    return false;
   }
 };
 
@@ -80,7 +89,6 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-
 app.get("/register", (req, res) => {
   const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_registration", templateVars);
@@ -96,14 +104,18 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const id = generateRandomString();
 
-  const user_id = users[id]
-  res.cookie("user_id", id);
-  users.addUser(id, email, password);
-
+  if (!users.confirmNewUser(email)) {
+    users.addUser(id, email, password);
+  } else {
+    return res.status(400).send('This email address is already in use.');
+  }
+  
   if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.')
   }
-
+  
+  const user_id = users[id]
+  res.cookie("user_id", id);
   res.redirect("/urls");
 });
 
