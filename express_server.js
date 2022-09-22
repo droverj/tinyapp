@@ -63,8 +63,8 @@ app.get("/urls.json", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   if (!longURL) {
-    return res.status(400).send('Invalid short URL ID')
-   }
+    return res.status(400).send('Invalid short URL ID');
+  }
   res.redirect(longURL);
 });
 
@@ -130,7 +130,7 @@ app.post("/register", (req, res) => {
 
 app.post("/urls", (req, res) => {
   if (!req.cookies["user_id"]) {
-    return res.status(403).send('You must be logged in to use TinyApp')
+    return res.status(403).send('You must be logged in to use TinyApp');
   }
   const id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
