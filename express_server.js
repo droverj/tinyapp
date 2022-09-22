@@ -70,6 +70,9 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  }
   const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_login", templateVars);
 });
@@ -85,6 +88,9 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  }
   const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_registration", templateVars);
 });
