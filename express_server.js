@@ -13,29 +13,39 @@ const users = {
   userRandomID: {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "purple-monkey-dinosaur",
+    onlineStatus: false
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: "dishwasher-funk",
+    onlineStatus: false
   },
   addUser: function(id, email, password) {
     users[id] = {};
     users[id]["id"] = id;
     users[id]["email"] = email;
     users[id]["password"] = password;
+    users[id]["onlineStatus"] = false;
   },
-  confirmNewUser: function(verifyEmail) {
-    const keys = Object.keys(users);
+  verify: function(verification) {
     for (const item in users) {
-      if (users[item].email === verifyEmail) {
+      if (users[item][verification] === verification) {
         return true;
       }
     }
     return false;
+  },
+  changeStatus: function(checkEmail, status) {
+    for (const item in users) {
+      if (users[item].email === checkEmail) {
+        return users[item].onlineStatus = status;
+      }
+    }
   }
 };
+
 
 const generateRandomString = () => {
   let result = '';
@@ -63,7 +73,6 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
-  console.log(longURL);
   res.redirect(longURL);
 });
 
@@ -75,12 +84,6 @@ app.get("/login", (req, res) => {
   const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_login", templateVars);
 });
-
-// app.get("/logout", (req, res) => {
-//   // const templateVars = { user: req.cookies["user_id"], userDatabase: users };
-//   // res.render("urls_login", templateVars);
-//   res.redirect("/login");
-// });
 
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: req.cookies["user_id"], userDatabase: users };
@@ -107,18 +110,20 @@ app.post("/register", (req, res) => {
   const password = req.body.password;
   const id = generateRandomString();
 
-  if (!users.confirmNewUser(email)) {
+  if (!users.verify(email)) {
     users.addUser(id, email, password);
+    users.changeStatus(email, true);
+
   } else {
     return res.status(400).send('This email address is already in use.');
   }
-  
+
   if (!email || !password) {
-    return res.status(400).send('Please fill in the required fields.')
+    return res.status(400).send('Please fill in the required fields.');
   }
-  
-  const user_id = users[id]
+
   res.cookie("user_id", id);
+  res.cookie("email", email);
   res.redirect("/urls");
 });
 
@@ -137,20 +142,34 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect("/urls");
-})
+});
 
 app.post("/login", (req, res) => {
-  const emailCookie = req.body.email;
+  const email = req.body.email;
   const password = req.body.password;
-  // res.cookie("username", username);
+  const id = generateRandomString();
+  users.changeStatus(email, true);
+
+  if (!users.verify(email)) {
+    return res.status(403).send('Your credentials did not match our system.');
+  } else if (!email || !password) {
+    return res.status(400).send('Please fill in the required fields.');
+  } else {
+    if (!users.verify(password)) {
+      return res.status(403).send('Incorrect credentials.');
+    }
+  }
+  
+  res.cookie("user_id", id);
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
+  const email = req.cookies.email;
+  users.changeStatus(email, false);
   res.clearCookie("user_id");
   res.redirect("/login");
 });
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
