@@ -28,6 +28,7 @@ const users = {
   },
   verify: function(email, password) {
     const usersArray = Object.values(users);
+
     const user = usersArray.find((user) => {
       return user.email === email && user.password === password;
     });
@@ -98,7 +99,7 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
 
   const usersArray = Object.values(users);
-  const user = usersArray.find((user) => {
+  usersArray.find((user) => {
     if (user.email === email) {
       return res.status(400).send('Please use a different email address.');
     } else {
@@ -138,11 +139,11 @@ app.post("/login", (req, res) => {
   if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
   } else if (!users.verify(email, password)) {
-    return res.status(403).send('Incorrect credentials.');
+    return res.status(403).send('User not found.');
   } else {
     user = users.verify(email, password);
   }
-
+  res.cookie("user_id", user);
   res.redirect("/urls");
 });
 
