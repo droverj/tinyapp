@@ -83,6 +83,9 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    res.redirect("/login");
+  }
   const templateVars = { user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_new", templateVars);
 });
@@ -123,6 +126,9 @@ app.post("/register", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
+  if (!req.cookies["user_id"]) {
+    return res.status(400).send('You must be logged in to use TinyApp')
+  }
   const id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`);
