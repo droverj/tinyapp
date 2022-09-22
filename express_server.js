@@ -14,38 +14,26 @@ const users = {
     id: "userRandomID",
     email: "user@example.com",
     password: "purple-monkey-dinosaur",
-    onlineStatus: false
   },
   user2RandomID: {
     id: "user2RandomID",
     email: "user2@example.com",
     password: "dishwasher-funk",
-    onlineStatus: false
   },
   addUser: function(id, email, password) {
     users[id] = {};
     users[id]["id"] = id;
     users[id]["email"] = email;
     users[id]["password"] = password;
-    users[id]["onlineStatus"] = false;
   },
-  verify: function(verification) {
-    for (const item in users) {
-      if (users[item][verification] === verification) {
-        return true;
-      }
-    }
-    return false;
-  },
-  changeStatus: function(checkEmail, status) {
-    for (const item in users) {
-      if (users[item].email === checkEmail) {
-        return users[item].onlineStatus = status;
-      }
-    }
+  verify: function(email, password) {
+    const usersArray = Object.values(users);
+    const user = usersArray.find((user) => {
+      return user.email === email && user.password === password;
+    });
+    return user;
   }
 };
-
 
 const generateRandomString = () => {
   let result = '';
@@ -106,24 +94,23 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
+  const { email, password } = req.body;
   const id = generateRandomString();
 
-  if (!users.verify(email)) {
-    users.addUser(id, email, password);
-    users.changeStatus(email, true);
-
-  } else {
-    return res.status(400).send('This email address is already in use.');
-  }
+  const usersArray = Object.values(users);
+  const user = usersArray.find((user) => {
+    if (user.email === email) {
+      return res.status(400).send('Please use a different email address.');
+    } else {
+      users.addUser(id, email, password);
+    }
+  });
 
   if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
   }
 
   res.cookie("user_id", id);
-  res.cookie("email", email);
   res.redirect("/urls");
 });
 
@@ -145,28 +132,21 @@ app.post("/urls/:id/update", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  const id = generateRandomString();
-  users.changeStatus(email, true);
+  const { email, password } = req.body;
+  let user;
 
-  if (!users.verify(email)) {
-    return res.status(403).send('Your credentials did not match our system.');
-  } else if (!email || !password) {
+  if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
+  } else if (!users.verify(email, password)) {
+    return res.status(403).send('Incorrect credentials.');
   } else {
-    if (!users.verify(password)) {
-      return res.status(403).send('Incorrect credentials.');
-    }
+    user = users.verify(email, password);
   }
-  
-  res.cookie("user_id", id);
+
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  const email = req.cookies.email;
-  users.changeStatus(email, false);
   res.clearCookie("user_id");
   res.redirect("/login");
 });
