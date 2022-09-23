@@ -153,11 +153,13 @@ app.post("/urls", (req, res) => {
   if (!userId) {
     return res.status(403).send('You must be logged in to use TinyApp');
   }
+
   const id = generateRandomString();
   urlDatabase[id] = {};
   urlDatabase[id]["longURL"] = req.body.longURL;
   urlDatabase[id]["userID"] = userId;
 
+  // console.log(urlDatabase);
   res.redirect(`/urls/${id}`);
 });
 
@@ -180,7 +182,8 @@ app.post("/login", (req, res) => {
   } else if (!users.verify(email, password)) {
     return res.status(403).send('User not found.');
   } else {
-    user = users.verify(email, password);
+    user = users.verify(email, password).id;
+    console.log(user);
   }
   res.cookie("user_id", user);
   res.redirect("/urls");
