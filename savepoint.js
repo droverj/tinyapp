@@ -66,23 +66,6 @@ const urlDatabase = {
   }
 };
 
-const urlsForUser = id => {
-  let userURLs = {};
-  for (const item in urlDatabase) {
-    if (urlDatabase[item].userID === "default") {
-      userURLs[item] = {};
-      userURLs[item]["longURL"] = urlDatabase[item].longURL;
-      userURLs[item]["userID"] = urlDatabase[item].userID;
-    }
-    if (urlDatabase[item].userID === id) {
-      userURLs[item] = {};
-      userURLs[item]["longURL"] = urlDatabase[item].longURL;
-      userURLs[item]["userID"] = urlDatabase[item].userID;
-    }
-  }
-  return userURLs;
-};
-
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -114,13 +97,10 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const { user_id } = req.cookies;
-  const userUrlDatabase = urlsForUser(user_id);
-
-  if (!user_id) {
+    if (!req.cookies["user_id"]) {
     res.redirect("/login");
   }
-  const templateVars = { urls: userUrlDatabase, user: user_id, userDatabase: users };
+  const templateVars = { urls: urlDatabase, user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_index", templateVars);
 });
 
@@ -141,12 +121,6 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const { user_id } = req.cookies;
-
-  if (!user_id) {
-    return res.status(403).send('Please login to TinyApp to access this URL.');
-  }
-
   const templateVars = { id: req.params.id, urls: urlDatabase, user: req.cookies["user_id"], userDatabase: users };
   res.render("urls_show", templateVars);
 });
@@ -173,10 +147,10 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
-  if (!userId) {
-    return res.status(403).send('You must be logged in to use TinyApp');
-  }
+  // const userId = req.cookies["user_id"];
+  // if (!userId) {
+  //   return res.status(403).send('You must be logged in to use TinyApp');
+  // }
 
   const id = generateRandomString();
   urlDatabase[id] = {};
@@ -220,4 +194,3 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
