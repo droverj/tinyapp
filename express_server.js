@@ -126,10 +126,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies["user_id"]) {
+  const { user_id } = req.cookies;
+
+  if (user_id) {
     res.redirect("/urls");
   }
-  const templateVars = { user: req.cookies["user_id"], userDatabase: users };
+  const templateVars = { user: user_id, userDatabase: users };
   res.render("urls_registration", templateVars);
 });
 
@@ -183,20 +185,31 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
-  if (!userId) {
+  const { user_id } = req.cookies;
+
+  if (!user_id) {
     return res.status(403).send('You must be logged in to use TinyApp');
   }
 
   const id = generateRandomString();
   urlDatabase[id] = {};
   urlDatabase[id]["longURL"] = req.body.longURL;
-  urlDatabase[id]["userID"] = userId;
+  urlDatabase[id]["userID"] = user_id;
 
   res.redirect(`/urls/${id}`);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
+  const { user_id } = req.cookies;
+
+  if (!urlsForUser(user_id)) {
+    return res.status(403).send('You do not own this URL.');
+  }
+
+  if (!user_id) {
+    return res.status(403).send('You must be logged in to use TinyApp');
+  }
+
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
 });
@@ -216,7 +229,6 @@ app.post("/login", (req, res) => {
     return res.status(403).send('User not found.');
   } else {
     user = users.verify(email, password).id;
-    console.log(user);
   }
   res.cookie("user_id", user);
   res.redirect("/urls");
@@ -225,6 +237,18 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/login");
+});
+
+app.post("/urls/:id", (req, res) => {
+  const { user_id } = req.cookies;
+
+  if (!urlsForUser(user_id)) {
+    return res.status(403).send('You do not own this URL.');
+  }
+
+  if (!user_id) {
+    return res.status(403).send('You must be logged in to use TinyApp');
+  }
 });
 
 app.listen(PORT, () => {
