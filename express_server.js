@@ -135,10 +135,15 @@ app.get("/register", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const { user_id } = req.cookies;
+  const id = req.params.id;
   const userUrlDatabase = urlsForUser(user_id);
   
   if (!user_id) {
     return res.status(403).send('Please login to TinyApp to access this URL.');
+  }
+
+  if (!userUrlDatabase[id]) {
+    return res.status(403).send('You do not own this URL.');
   }
   
   const templateVars = { id: req.params.id, urls: userUrlDatabase, user: user_id, userDatabase: users };
@@ -147,9 +152,8 @@ app.get("/urls/:id", (req, res) => {
 
 app.get("/u/:id", (req, res) => {
   const { user_id } = req.cookies;
-  const { id } = req.params.id;
   const userURLs = urlsForUser(user_id);
-  const longURL = findLongURL(id, userURLs);
+  const longURL = findLongURL(req.params.id, userURLs);
 
   if (!longURL) {
     return res.status(400).send('Invalid short URL ID');
