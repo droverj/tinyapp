@@ -74,6 +74,14 @@ const urlsForUser = id => {
   return userURLs;
 };
 
+const findUser = email => {
+  for (const item in users) {
+    if (users[item].email === email) {
+      return users[item].id;
+    }
+  }
+};
+
 const findLongURL = (id, userURLs) => {
   let longURL = '';
   for (const item in userURLs) {
@@ -223,16 +231,17 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  let user;
+  const user_id = findUser(email);
+  const hashedPassword = users[user_id].password;
 
   if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
-  } else if (!users.verify(email, hashedPassword)) {
-    return res.status(403).send('User not found.');
-  } else {
-    user = users.verify(email, hashedPassword).id;
   }
+
+  if (!bcrypt.compareSync(password, hashedPassword)) {
+    return res.status(403).send('User not found.');
+  } 
+
   res.cookie("user_id", user);
   res.redirect("/urls");
 });
