@@ -234,8 +234,12 @@ app.post("/urls/:id/update", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
   const user_id = findUser(email);
+  
+  if (!user_id) {
+    res.redirect("/register");
+  }
+  
   const hashedPassword = users[user_id].password;
-
   if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
   }
@@ -255,9 +259,15 @@ app.post("/logout", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const { user_id } = req.cookies;
+  const { email, password } = users[user_id];
+  const verifyEmail = verify(email, password);
 
   if (!urlsForUser(user_id)) {
     return res.status(403).send('You do not own this URL.');
+  }
+
+  if (!verifyEmail) {
+    return res.status(403).send('Please sign up for TinyApp to access it.');
   }
 
   if (!user_id) {
