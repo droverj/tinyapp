@@ -36,16 +36,6 @@ const users = {
   }
 };
 
-const findLongURL = id => {
-  let longURL = '';
-  for (const item in urlDatabase) {
-    if (item === id) {
-      longURL = urlDatabase[item].longURL;
-    }
-    return longURL;
-  }
-};
-
 const generateRandomString = () => {
   let result = '';
   const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -83,6 +73,16 @@ const urlsForUser = id => {
   return userURLs;
 };
 
+const findLongURL = (id, userURLs) => {
+  let longURL = '';
+  for (const item in userURLs) {
+    if (item === id) {
+      longURL = userURLs[item].longURL;
+    }
+  }
+  return longURL;
+};
+
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
@@ -93,13 +93,6 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/u/:id", (req, res) => {
-  const longURL = findLongURL(req.params.id);
-  if (!longURL) {
-    return res.status(400).send('Invalid short URL ID');
-  }
-  res.redirect(longURL);
-});
 
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -116,7 +109,7 @@ app.get("/login", (req, res) => {
 app.get("/urls", (req, res) => {
   const { user_id } = req.cookies;
   const userUrlDatabase = urlsForUser(user_id);
-
+  
   if (!user_id) {
     res.redirect("/login");
   }
@@ -142,13 +135,26 @@ app.get("/register", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const { user_id } = req.cookies;
-
+  const userUrlDatabase = urlsForUser(user_id);
+  
   if (!user_id) {
     return res.status(403).send('Please login to TinyApp to access this URL.');
   }
-
-  const templateVars = { id: req.params.id, urls: urlDatabase, user: req.cookies["user_id"], userDatabase: users };
+  
+  const templateVars = { id: req.params.id, urls: userUrlDatabase, user: user_id, userDatabase: users };
   res.render("urls_show", templateVars);
+});
+
+app.get("/u/:id", (req, res) => {
+  const { user_id } = req.cookies;
+  const { id } = req.params.id;
+  const userURLs = urlsForUser(user_id);
+  const longURL = findLongURL(id, userURLs);
+
+  if (!longURL) {
+    return res.status(400).send('Invalid short URL ID');
+  }
+  res.redirect(longURL);
 });
 
 app.post("/register", (req, res) => {
