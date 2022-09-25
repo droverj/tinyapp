@@ -181,6 +181,8 @@ app.post("/register", (req, res) => {
   usersArray.find((user) => {
     if (user.email === email) {
       return res.status(400).send('Please use a different email address.');
+    } else if (!password) {
+      return res.status(400).send('Please fill in the required fields.');
     } else {
       users.addUser(id, email, hashedPassword);
     }
@@ -242,7 +244,7 @@ app.post("/login", (req, res) => {
     return res.status(403).send('User not found.');
   } 
 
-  res.cookie("user_id", user);
+  res.cookie("user_id", user_id);
   res.redirect("/urls");
 });
 
