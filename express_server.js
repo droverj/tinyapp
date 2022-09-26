@@ -5,6 +5,7 @@ const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
+const findUserByEmail = require('./helpers');
 
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
@@ -78,14 +79,6 @@ const urlsForUser = id => {
     }
   }
   return userURLs;
-};
-
-const findUser = (email, database) => {
-  for (const item in database) {
-    if (database[item].email === email) {
-      return database[item].id;
-    }
-  }
 };
 
 const findLongURL = (id, userURLs) => {
@@ -187,7 +180,7 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const id = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const user_id = findUser(email, users);
+  const user_id = findUserByEmail(email, users);
   const userEmail = users[user_id];
 
   if (userEmail) {
@@ -239,7 +232,7 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const user_id = findUser(email, users);
+  const user_id = findUserByEmail(email, users);
   
   if (!user_id) {
     res.redirect("/register");
