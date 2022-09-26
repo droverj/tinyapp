@@ -6,4 +6,63 @@ const findUserByEmail = (email, database) => {
   }
 };
 
-module.exports = findUserByEmail;
+const generateRandomString = () => {
+  let result = '';
+  const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.random() * characters.length);
+  }
+  return result;
+};
+
+const urlsForUser = (id, database) => {
+  let userURLs = {};
+  for (const item in database) {
+    if (database[item].userID === "default") {
+      userURLs[item] = {};
+      userURLs[item]["longURL"] = database[item].longURL;
+      userURLs[item]["userID"] = database[item].userID;
+    }
+    if (database[item].userID === id) {
+      userURLs[item] = {};
+      userURLs[item]["longURL"] = database[item].longURL;
+      userURLs[item]["userID"] = database[item].userID;
+    }
+  }
+  return userURLs;
+};
+
+const findLongURL = (id, userURLs) => {
+  let longURL = '';
+  for (const item in userURLs) {
+    if (item === id) {
+      longURL = userURLs[item].longURL;
+    }
+  }
+  return longURL;
+};
+
+const addUser = (id, email, password, userDatabase) => {
+  userDatabase[id] = {};
+  userDatabase[id]["id"] = id;
+  userDatabase[id]["email"] = email;
+  userDatabase[id]["password"] = password;
+};
+
+const verify = (email, password) => {
+  const usersArray = Object.values(users);
+
+  const user = usersArray.find((user) => {
+    return user.email === email && user.password === password;
+  });
+  return user;
+};
+
+module.exports = {
+  findUserByEmail,
+  generateRandomString,
+  urlsForUser,
+  findLongURL,
+  addUser,
+  verify
+};

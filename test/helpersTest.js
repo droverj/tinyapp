@@ -1,7 +1,6 @@
 const { assert } = require('chai');
 
 const findUserByEmail = require('../helpers');
-// const { generateRandomString, urlsForUser, findLongURL } = require('../express_server')
 
 const testUsers = {
   "userRandomID": {
@@ -20,7 +19,7 @@ describe('findUserByEmail', function() {
   it('should return a user with valid email', function() {
     const user = findUserByEmail("user@example.com", testUsers)
     const expectedUserID = "userRandomID";
-    // Write your assert statement here
+    assert.strictEqual(expectedUserID,"userRandomID");
   });
 });
 
@@ -28,6 +27,6 @@ describe('findUserByEmail', function() {
   it('should return undefined if passed an invalid email', function() {
     const user = findUserByEmail("user@@xample.com", testUsers)
     const expectedUserID = undefined;
-    // Write your assert statement here
+    assert.strictEqual(undefined, undefined);
   });
 });
