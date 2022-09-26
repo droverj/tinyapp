@@ -80,10 +80,10 @@ const urlsForUser = id => {
   return userURLs;
 };
 
-const findUser = email => {
-  for (const item in users) {
-    if (users[item].email === email) {
-      return users[item].id;
+const findUser = (email, database) => {
+  for (const item in database) {
+    if (database[item].email === email) {
+      return database[item].id;
     }
   }
 };
@@ -187,7 +187,7 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const id = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const user_id = findUser(email);
+  const user_id = findUser(email, users);
   const userEmail = users[user_id];
 
   if (userEmail) {
@@ -239,7 +239,7 @@ app.post("/urls/:id/update", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
-  const user_id = findUser(email);
+  const user_id = findUser(email, users);
   
   if (!user_id) {
     res.redirect("/register");
