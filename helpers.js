@@ -18,11 +18,6 @@ const generateRandomString = () => {
 const urlsForUser = (id, database) => {
   let userURLs = {};
   for (const item in database) {
-    if (database[item].userID === "default") {
-      userURLs[item] = {};
-      userURLs[item]["longURL"] = database[item].longURL;
-      userURLs[item]["userID"] = database[item].userID;
-    }
     if (database[item].userID === id) {
       userURLs[item] = {};
       userURLs[item]["longURL"] = database[item].longURL;
