@@ -2,13 +2,19 @@
 const express = require('express');
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
 
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ["some-long-secret"],
+
+  // Cookie Options
+  // maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
 
 const users = {
   addUser: function(id, email, password) {
@@ -108,15 +114,18 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {
+  const user_id = req.session.user_id;
+
+  if (user_id) {
     res.redirect("/urls");
   }
-  const templateVars = { user: req.cookies["user_id"], userDatabase: users };
+  const templateVars = { user: user_id, userDatabase: users };
   res.render("urls_login", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
+  console.log(user_id);
   const userUrlDatabase = urlsForUser(user_id);
   
   if (!user_id) {
@@ -127,15 +136,17 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  if (!req.cookies["user_id"]) {
+  const user_id = req.session.user_id;
+
+  if (!user_id) {
     res.redirect("/login");
   }
-  const templateVars = { user: req.cookies["user_id"], userDatabase: users };
+  const templateVars = { user: user_id, userDatabase: users };
   res.render("urls_new", templateVars);
 });
 
 app.get("/register", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
 
   if (user_id) {
     res.redirect("/urls");
@@ -145,7 +156,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
   const id = req.params.id;
   const userUrlDatabase = urlsForUser(user_id);
   
@@ -157,12 +168,12 @@ app.get("/urls/:id", (req, res) => {
     return res.status(403).send('You do not own this URL.');
   }
   
-  const templateVars = { id: req.params.id, urls: userUrlDatabase, user: user_id, userDatabase: users };
+  const templateVars = { id: id, urls: userUrlDatabase, user: user_id, userDatabase: users };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
   const userURLs = urlsForUser(user_id);
   const longURL = findLongURL(req.params.id, userURLs);
 
@@ -176,28 +187,23 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const id = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
+  const user_id = findUser(email);
+  const userEmail = users[user_id];
 
-  const usersArray = Object.values(users);
-  usersArray.find((user) => {
-    if (user.email === email) {
-      return res.status(400).send('Please use a different email address.');
-    } else if (!password) {
-      return res.status(400).send('Please fill in the required fields.');
-    } else {
-      users.addUser(id, email, hashedPassword);
-    }
-  });
-
-  if (!email || !password) {
+  if (userEmail) {
+    return res.status(400).send('Please use a different email address.');
+  } else if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
+  } else {
+    users.addUser(id, email, hashedPassword);
   }
 
-  res.cookie("user_id", id);
+  req.session.user_id = id;
   res.redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
 
   if (!user_id) {
     return res.status(403).send('You must be logged in to use TinyApp');
@@ -212,7 +218,7 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
 
   if (!urlsForUser(user_id)) {
     return res.status(403).send('You do not own this URL.');
@@ -248,17 +254,17 @@ app.post("/login", (req, res) => {
     return res.status(403).send('User not found.');
   } 
 
-  res.cookie("user_id", user_id);
+  req.session.user_id = user_id;
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
 app.post("/urls/:id", (req, res) => {
-  const { user_id } = req.cookies;
+  const user_id = req.session.user_id;
   const { email, password } = users[user_id];
   const verifyEmail = verify(email, password);
 
