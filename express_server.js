@@ -1,5 +1,5 @@
 // express_server.js
-const { findUserByEmail, generateRandomString, urlsForUser, addUser, verify } = require('./helpers');
+const { findUserByEmail, generateRandomString, urlsForUser, addUser } = require('./helpers');
 const { users, urlDatabase } = require('./databases');
 const express = require('express');
 const cookieSession = require('cookie-session');

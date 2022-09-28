@@ -34,19 +34,9 @@ const addUser = (id, email, password, userDatabase) => {
   userDatabase[id]["password"] = password;
 };
 
-const verify = (email, password) => {
-  const usersArray = Object.values(users);
-
-  const user = usersArray.find((user) => {
-    return user.email === email && user.password === password;
-  });
-  return user;
-};
-
 module.exports = {
   findUserByEmail,
   generateRandomString,
   urlsForUser,
   addUser,
-  verify
 };
