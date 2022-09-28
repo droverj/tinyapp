@@ -26,14 +26,6 @@ app.get("/", (req, res) => {
   }
 });
 
-// app.get("/urls.json", (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n");
-// });
-
 app.get("/register", (req, res) => {
   const { userId } = req.session;
   const templateVars = { user: userId, userDatabase: users };
@@ -86,11 +78,13 @@ app.get("/urls/:id", (req, res) => {
   const templateVars = { id: id, urls: userUrlDatabase, user: userId, userDatabase: users };
 
   if (!userId) {
-    return res.status(403).send('Please login to TinyApp to access this URL.');
+    return res.status(403).send('Please <a href="/login"> login </a> to use TinyApp');
   }
-
+  if (!urlDatabase[id]) {
+    return res.status(404).send('This short URL is invalid. <a href="/urls/"> Return </a> to your URLs.');
+  }
   if (!userUrlDatabase[id]) {
-    return res.status(403).send('You do not own this URL.');
+    return res.status(403).send('You do not own this URL. Go <a href="/urls/new"> here </a> to create your own link.');
   }
 
   res.render("urls_show", templateVars);
@@ -101,7 +95,7 @@ app.get("/u/:id", (req, res) => {
   const { longURL } = urlDatabase[id]
 
   if (!longURL) {
-    return res.status(400).send('Invalid short URL ID');
+    return res.status(404).send('Invalid short URL ID');
   }
 
   res.redirect(longURL);
@@ -121,7 +115,29 @@ app.post("/register", (req, res) => {
     addUser(id, email, hashedPassword, users);
     req.session.userId = id;
   }
+  
+  res.redirect("/urls");
+});
 
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+  const userId = findUserByEmail(email, users);
+
+  if (!email || !password) {
+    return res.status(400).send('Please fill in the required fields.');
+  }
+
+  if (!userId) {
+    return res.status(403).send('Please <a href="/register"> Sign Up </a> to use TinyApp');
+  }
+
+  const hashedPassword = users[userId].password;
+
+  if (!bcrypt.compareSync(password, hashedPassword)) {
+    return res.status(403).send('User not found.');
+  }
+
+  req.session.userId = userId;
   res.redirect("/urls");
 });
 
@@ -129,7 +145,7 @@ app.post("/urls", (req, res) => {
   const { userId } = req.session;
 
   if (!userId) {
-    return res.status(403).send('You must be logged in to use TinyApp');
+    return res.status(403).send('Please login to use TinyApp');
   }
 
   const id = generateRandomString();
@@ -141,43 +157,19 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
+  const { id } = req.params;
+  const verifyOwnership = urlDatabase[id].userID;
 
-  if (!urlsForUser(userId, urlDatabase)) {
-    return res.status(403).send('You do not own this URL.');
+  if (verifyOwnership !== userId) {
+    return res.status(403).send('You do not own this URL.\n');
   }
 
   if (!userId) {
-    return res.status(403).send('You must be logged in to use TinyApp');
+    return res.status(403).send('Please login to use TinyApp');
   }
 
   delete urlDatabase[req.params.id];
-  res.redirect("/urls");
-});
-
-app.post("/urls/:id/update", (req, res) => {
-  urlDatabase[req.params.id].longURL = req.body.longURL;
-  res.redirect("/urls");
-});
-
-app.post("/login", (req, res) => {
-  const { email, password } = req.body;
-  const userId = findUserByEmail(email, users);
-
-  if (!userId) {
-    res.redirect("/register");
-  }
-
-  const hashedPassword = users[userId].password;
-  if (!email || !password) {
-    return res.status(400).send('Please fill in the required fields.');
-  }
-
-  if (!bcrypt.compareSync(password, hashedPassword)) {
-    return res.status(403).send('User not found.');
-  }
-
-  req.session.userId = userId;
   res.redirect("/urls");
 });
 
@@ -187,21 +179,20 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const userId = req.session.userId;
-  const { email, password } = users[userId];
-  const verifyEmail = verify(email, password);
-
-  if (!urlsForUser(userId, urlDatabase)) {
-    return res.status(403).send('You do not own this URL.');
-  }
-
-  if (!verifyEmail) {
-    return res.status(403).send('Please sign up for TinyApp to access it.');
-  }
+  const { userId } = req.session;
+  const { id } = req.params;
+  const { longURL } = req.body;
 
   if (!userId) {
-    return res.status(403).send('You must be logged in to use TinyApp');
+    return res.status(403).send('Please login to use TinyApp\n');
   }
+
+  if (!urlDatabase[id].userID !== userId) {
+    return res.status(403).send('You do not own this URL and therefore may not edit it.\n');
+  }
+
+  urlDatabase[id].longURL = longURL;
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
