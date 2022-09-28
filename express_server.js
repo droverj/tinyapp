@@ -1,13 +1,14 @@
 // express_server.js
+const { findUserByEmail, generateRandomString, urlsForUser, addUser, verify } = require('./helpers');
+const { users, urlDatabase } = require('./databases');
 const express = require('express');
-const app = express();
-const PORT = 8080;
 const cookieSession = require('cookie-session');
-app.use(express.urlencoded({ extended: true }));
 const morgan = require('morgan');
 const bcrypt = require('bcryptjs');
-const { findUserByEmail, generateRandomString, urlsForUser, findLongURL, addUser, verify } = require('./helpers');
+const app = express();
+const PORT = 8080;
 
+app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(morgan('dev'));
 app.use(cookieSession({
@@ -15,89 +16,76 @@ app.use(cookieSession({
   keys: ["some-long-secret"],
 }));
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  }
-};
-
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "default"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "default"
-  }
-};
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userId = req.session.userId;
+
+  if (!userId) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
+
+app.get("/register", (req, res) => {
+  const { userId } = req.session;
+  const templateVars = { user: userId, userDatabase: users };
+
+  if (userId) {
+    return res.redirect("/urls");
+  }
+
+  res.render("urls_registration", templateVars);
 });
 
 app.get("/login", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
+  const templateVars = { user: userId, userDatabase: users };
 
   if (userId) {
-    res.redirect("/urls");
+    return res.redirect("/urls");
   }
-  const templateVars = { user: userId, userDatabase: users };
+
   res.render("urls_login", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
   const userUrlDatabase = urlsForUser(userId, urlDatabase);
+  const templateVars = { urls: userUrlDatabase, user: userId, userDatabase: users };
 
   if (!userId) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
-  const templateVars = { urls: userUrlDatabase, user: userId, userDatabase: users };
+
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
+  const templateVars = { user: userId, userDatabase: users };
 
   if (!userId) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
 
-  const templateVars = { user: userId, userDatabase: users };
   res.render("urls_new", templateVars);
 });
 
-app.get("/register", (req, res) => {
-  const userId = req.session.userId;
-
-  if (userId) {
-    res.redirect("/urls");
-  }
-
-  const templateVars = { user: userId, userDatabase: users };
-  res.render("urls_registration", templateVars);
-});
 
 app.get("/urls/:id", (req, res) => {
-  const userId = req.session.userId;
-  const id = req.params.id;
+  const { userId } = req.session;
+  const { id } = req.params;
   const userUrlDatabase = urlsForUser(userId, urlDatabase);
+  const templateVars = { id: id, urls: userUrlDatabase, user: userId, userDatabase: users };
 
   if (!userId) {
     return res.status(403).send('Please login to TinyApp to access this URL.');
@@ -107,18 +95,17 @@ app.get("/urls/:id", (req, res) => {
     return res.status(403).send('You do not own this URL.');
   }
 
-  const templateVars = { id: id, urls: userUrlDatabase, user: userId, userDatabase: users };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:id", (req, res) => {
-  const userId = req.session.userId;
-  const userURLs = urlsForUser(userId, urlDatabase);
-  const longURL = findLongURL(req.params.id, userURLs);
+  const { id } = req.params;
+  const { longURL } = urlDatabase[id]
 
   if (!longURL) {
     return res.status(400).send('Invalid short URL ID');
   }
+
   res.redirect(longURL);
 });
 
@@ -137,12 +124,11 @@ app.post("/register", (req, res) => {
     addUser(id, email, hashedPassword, users);
   }
 
-  req.session.userId = id;
   res.redirect("/urls");
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
 
   if (!userId) {
     return res.status(403).send('You must be logged in to use TinyApp');

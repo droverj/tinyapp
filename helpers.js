@@ -27,16 +27,6 @@ const urlsForUser = (id, database) => {
   return userURLs;
 };
 
-const findLongURL = (id, userURLs) => {
-  let longURL = '';
-  for (const item in userURLs) {
-    if (item === id) {
-      longURL = userURLs[item].longURL;
-    }
-  }
-  return longURL;
-};
-
 const addUser = (id, email, password, userDatabase) => {
   userDatabase[id] = {};
   userDatabase[id]["id"] = id;
