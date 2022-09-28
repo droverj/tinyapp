@@ -17,13 +17,13 @@ app.use(cookieSession({
 }));
 
 app.get("/", (req, res) => {
-  const userId = req.session.userId;
+  const { userId } = req.session;
 
   if (!userId) {
     res.redirect("/login");
-  } else {
-    res.redirect("/urls");
   }
+
+  res.redirect("/urls");
 });
 
 app.get("/register", (req, res) => {
@@ -83,9 +83,6 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[id]) {
     return res.status(404).send('This short URL is invalid. <a href="/urls/"> Return </a> to your URLs.');
   }
-  if (!userUrlDatabase[id] && userId) {
-    return res.status(403).send('You do not own this URL. Go <a href="/urls/new"> here </a> to create your own link.');
-  }
 
   res.render("urls_show", templateVars);
 });
@@ -120,7 +117,7 @@ app.post("/register", (req, res) => {
     addUser(id, email, hashedPassword, users);
     req.session.userId = id;
   }
-  
+
   res.redirect("/urls");
 });
 
@@ -171,10 +168,10 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 
   if (!userId) {
-    return res.status(403).send('Please login to use TinyApp');
+    return res.status(403).send('Please login to use TinyApp.\n');
   }
 
-  delete urlDatabase[req.params.id];
+  delete urlDatabase[id];
   res.redirect("/urls");
 });
 
