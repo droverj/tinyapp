@@ -113,9 +113,9 @@ app.post("/register", (req, res) => {
   const verifyUser = findUserByEmail(email, users);
 
   if (verifyUser) {
-    return res.status(400).send('Please use a different email address.');
+    return res.status(400).send('Please <a href="/register"> try again </a> with a different email address.');
   } else if (!email || !password) {
-    return res.status(400).send('Please fill in the required fields.');
+    return res.status(400).send('Please fill in all the required fields and <a href="/register"> try again</a>.');
   } else {
     addUser(id, email, hashedPassword, users);
     req.session.userId = id;
