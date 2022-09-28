@@ -65,7 +65,7 @@ app.get("/urls/new", (req, res) => {
   const templateVars = { user: userId, userDatabase: users };
 
   if (!userId) {
-    return res.redirect("/login");
+    return res.status(404).send('Please <a href="/login"> login </a> to create a short URL.');
   }
 
   res.render("urls_new", templateVars);
@@ -83,7 +83,7 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[id]) {
     return res.status(404).send('This short URL is invalid. <a href="/urls/"> Return </a> to your URLs.');
   }
-  if (!userUrlDatabase[id]) {
+  if (!userUrlDatabase[id] && userId) {
     return res.status(403).send('You do not own this URL. Go <a href="/urls/new"> here </a> to create your own link.');
   }
 
@@ -91,10 +91,15 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
+  const { userId } = req.session;
   const { id } = req.params;
 
-  if (!urlDatabase[id]) {
+  if (!urlDatabase[id] && userId) {
     return res.status(404).send('Invalid short URL ID. Go <a href="/urls/new"> here </a> to create a new link. Go <a href="/urls"> here </a> to return to your URLs.');
+  }
+
+  if (!urlDatabase[id] && !userId) {
+    return res.status(404).send('Invalid short URL ID. Please <a href="/login"> login </a> to create a new link.');
   }
 
   const longURL = urlDatabase[id].longURL;
@@ -182,12 +187,13 @@ app.post("/urls/:id", (req, res) => {
   const { userId } = req.session;
   const { id } = req.params;
   const { longURL } = req.body;
+  const verifyOwnership = urlDatabase[id].userID;
 
   if (!userId) {
     return res.status(403).send('Please login to use TinyApp\n');
   }
 
-  if (!urlDatabase[id].userID !== userId) {
+  if (verifyOwnership !== userId) {
     return res.status(403).send('You do not own this URL and therefore may not edit it.\n');
   }
 
