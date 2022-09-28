@@ -16,7 +16,6 @@ app.use(cookieSession({
   keys: ["some-long-secret"],
 }));
 
-
 app.get("/", (req, res) => {
   const userId = req.session.userId;
 
@@ -80,7 +79,6 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new", templateVars);
 });
 
-
 app.get("/urls/:id", (req, res) => {
   const { userId } = req.session;
   const { id } = req.params;
@@ -113,15 +111,15 @@ app.post("/register", (req, res) => {
   const { email, password } = req.body;
   const id = generateRandomString();
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const userId = findUserByEmail(email, users);
-  const userEmail = users[userId];
+  const verifyUser = findUserByEmail(email, users);
 
-  if (userEmail) {
+  if (verifyUser) {
     return res.status(400).send('Please use a different email address.');
   } else if (!email || !password) {
     return res.status(400).send('Please fill in the required fields.');
   } else {
     addUser(id, email, hashedPassword, users);
+    req.session.userId = id;
   }
 
   res.redirect("/urls");

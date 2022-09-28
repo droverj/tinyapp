@@ -47,7 +47,6 @@ module.exports = {
   findUserByEmail,
   generateRandomString,
   urlsForUser,
-  findLongURL,
   addUser,
   verify
 };
